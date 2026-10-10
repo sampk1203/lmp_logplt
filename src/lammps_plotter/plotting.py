@@ -4,8 +4,18 @@ import numpy as np
 
 def moving_average(arr: np.ndarray, window: int) -> np.ndarray:
     """Simple centered rolling mean. Shrinks window at edges (no NaN padding)."""
-    if window <= 1:
+    if window <= 1 or len(arr) == 0:
         return arr
+    if window > len(arr):
+        # np.convolve(..., mode="same") returns max(len(arr), len(kernel)),
+        # so an oversized kernel silently upsizes the output and breaks the
+        # x/y shape match downstream. Clamp instead.
+        print(
+            f"warn: smooth window {window} > block size {len(arr)}, "
+            f"clamping to {len(arr)}",
+            file=sys.stderr,
+        )
+        window = len(arr)
     kernel = np.ones(window) / window
     # 'same' mode + edge correction via counting overlapping kernel weight
     smoothed = np.convolve(arr, kernel, mode="same")
